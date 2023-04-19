@@ -1,0 +1,36 @@
+# About: Channel Status Analysis in MicroBooNE, running in a MicroBooNE setup environment 
+
+# find the proper dataset definition
+https://microboone-exp.fnal.gov/at_work/AnalysisTools/data/ub_datasets_v3.html
+
+# 0. get the file list with dataset definition and additional requirements, i.e.:
+samweb list-files "defname: dataset_definition and run_number > 5000 and run_number < 6000" > files_unsorted.list
+
+# 1. sort the files by run, subrun
+sort files_unsorted.list -t - -k 3,4n > files_sorted.list
+
+# 2. select the file that contain max event count for each run and create a dataset file list
+python createFileList.py files_sorted.list files_sorted_maxeventfile.lis
+
+# 3. create a dataset using FileList in 2.
+python createNewDefinition.py
+
+# 4. use the new defined dataset to run job
+# fcl: wirecell_nfBadChannels.fcl and channelStatus.fcl
+## need the correct configruation for ASICs misconfiguration 
+
+# 5. create a list of output from jobs
+  ls /path/to/output/root/files/channelStatus*.root > ./playlist.dat
+
+# 6. compile analyze_channelStatus.C and run it: need check runLow and runHigh
+  g++ -o analyze_channelStatus analyze_channelStatus.C `root-config --cflags --libs`
+    ./analyze_channelStatus playlist.dat 1.0 run1
+
+# 7. convert run number to timestamp
+python convertTimeStamps.py
+
+# 8. make plots
+root plot.C
+
+# 9. update the database, see:
+https://cdcvs.fnal.gov/redmine/projects/uboonecode/wiki/Calibration_Database
